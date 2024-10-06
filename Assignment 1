@@ -1,0 +1,67 @@
+import numpy as np
+import pandas as pd
+
+df = pd.read_csv("diabetes.csv")
+df.head()
+
+df["Outcome"] = df["Outcome"].replace(0, -1)
+df
+
+class Perceptron(object):
+    
+    def __init__(self, lrate = 0.01, iters = 10):
+        self.lrate = lrate
+        self.iters = iters
+        
+    def weighted_sum(self, x):
+        return np.dot(x, self.w[1:]) + self.w[0]
+    
+    def predict(self, x):
+        return np.where(self.weighted_sum(x) >= 0.0, 1, -1)
+    
+    def fit(self, X, y):
+        self.w = np.zeros(1 + X.shape[1])
+        self.errors_ = []
+
+        for _ in range(self.iters):
+            error = 0
+            for xi, target in zip(X, y):
+                y_pred = self.predict(xi)
+                update = self.lrate * (target - y_pred)
+                self.w[1:] = self.w[1:] + update * xi
+                self.w[0] = self.w[0] + update
+                error += int(update != 0.0)
+
+            self.errors_.append(error)
+
+        return self
+
+x = df.iloc[:, 0:8].values
+y = df.iloc[:, 8].values
+
+print(x[0:10])
+print(y[0:10])
+
+from sklearn.model_selection._split import train_test_split
+
+train_data, test_data, train_labels, test_labels = train_test_split(x, y, test_size=0.25)
+
+train_labels = np.where(train_labels == 1, 1, -1)
+test_labels = np.where(test_labels == 1, 1, -1)
+
+print('Train data:', train_data[0:2])
+print('Train labels:', train_labels[0:5])
+
+print('Test data:', test_data[0:2])
+print('Test labels:', test_labels[0:5])
+
+perceptron = Perceptron(lrate=0.05, iters=25)
+perceptron.fit(train_data, train_labels)
+
+test_preds = perceptron.predict(test_data)
+print(test_preds)
+
+from sklearn.metrics import accuracy_score
+
+accuracy = accuracy_score(test_preds, test_labels)
+print('Accuracy:', round(accuracy, 2) * 100, "%")
